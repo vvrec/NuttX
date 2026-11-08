@@ -1155,6 +1155,15 @@ config RAMTRON_SETSPEED
 		Select an option to provide an ioctl, MTDIOC_SETSPEED call that
 		supports dynamic selection of the RAMTRON bus speed.
 
+config RAMTRON_FRAM_NON_JEDEC
+	bool "Support parts without a JEDEC RDID"
+	default n
+	---help---
+		Some FRAMs (e.g. Cypress/Infineon FM25CL64B) implement no RDID
+		opcode at all, so the identification probe reads back nothing and
+		device detection fails. Enable this to add a non-JEDEC part to the
+		table and fall back to it when no JEDEC id matches.
+
 config RAMTRON_CHUNKING
 	bool "Support chunked writes"
 	default n
