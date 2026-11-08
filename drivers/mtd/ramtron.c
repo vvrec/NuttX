@@ -349,12 +349,16 @@ static const struct ramtron_parts_s g_ramtron_parts[] =
 #endif
 #ifdef CONFIG_RAMTRON_FRAM_NON_JEDEC
   {
-    "FM25H20",                    /* name */
+    /* FM25CL64B has no RDID opcode at all - it never answers the ID probe.
+     * This entry is selected as an explicit fallback in ramtron_readid()
+     * when no JEDEC id matched, so id1/id2 only need to be unique here.
+     */
+    "FM25CL64B",                  /* name */
     0xff,                         /* id1 */
     0xff,                         /* id2 */
-    256L * 1024L,                 /* size */
-    3,                            /* addr_len */
-    RAMTRON_INIT_CLK_MAX          /* speed */
+    8L * 1024L,                   /* size */
+    2,                            /* addr_len */
+    20000000                      /* speed */
 #ifdef CONFIG_RAMTRON_CHUNKING
     , false,                      /* chunked */
     RAMTRON_EMULATE_PAGE_SIZE     /* chunksize */
@@ -521,6 +525,22 @@ static inline int ramtron_readid(struct ramtron_dev_s *priv)
        priv->part->name != NULL &&
          !(priv->part->id1 == capacity && priv->part->id2 == part);
        priv->part++);
+
+#ifdef CONFIG_RAMTRON_FRAM_NON_JEDEC
+  /* Parts without RDID (e.g. FM25CL64B) answer nothing at all - accept the
+   * configured non-JEDEC part instead of failing, whatever garbage the bus
+   * floated to during the probe.
+   */
+
+  if (priv->part->name == NULL)
+    {
+      for (priv->part = g_ramtron_parts;
+           priv->part->name != NULL &&
+             !(priv->part->id1 == 0xff && priv->part->id2 == 0xff);
+           priv->part++);
+    }
+
+#endif
 
   if (priv->part->name != NULL)
     {
